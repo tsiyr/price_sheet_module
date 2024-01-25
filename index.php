@@ -55,15 +55,15 @@ th{
     <div class="container mt-4">
     <div class="row currency-box">
 
-        <div class="col-md-4 mb-3">
+        <div class="col-md-2 mb-3">
             <label for="currency1" class="form-label">Today's Date</label>
          <input class="form-control" type="text" value="<?= date('Y-m-d'); ?>" readonly>
 
         </div>
 
         <div class="col-md-2 mb-3">
-            <label for="currency1" class="form-label">Currency 1:</label>
-            <select class="form-select" id="currency1" oninput="updateText()">
+            <label for="currency1" class="form-label">Home Currency:</label>
+            <select class="form-select" id="currency1" onchange="updateText()">
                 <!-- Add major currencies as options -->
                 <option value="NGN" selected>NGN</option>
                 <option value="USD">USD</option>
@@ -74,8 +74,8 @@ th{
         </div>
 
         <div class="col-md-2 mb-3">
-            <label for="currency2" class="form-label">Currency 2:</label>
-            <select class="form-select" id="currency2" oninput="updateText()">
+            <label for="currency2" class="form-label">Alt Currency:</label>
+            <select class="form-select" id="currency2" onchange="updateText()">
                 <!-- Add major currencies as options -->
                 <option value="NGN">NGN</option>
                 <option value="USD" selected>USD</option>
@@ -85,8 +85,14 @@ th{
             </select>
         </div>
 
+         <div class="col-md-2 mb-3">
+            <label for="currency1" class="form-label">Alt Currency Rate</label>
+         <input id="rate" class="form-control" type="number" value="1" min="1">
+
+        </div>
+
           <div class="col-md-2 mb-3">
-            <label for="currency2" class="form-label">Retail Margin:</label>
+            <label for="currency2" class="form-label">Retail Margin %:</label>
             <select class="form-select" id="rt_margin" oninput="calcProfit()">
                  <?php for ($num = 0; $num < 101; $num++) : ?>
 
@@ -98,7 +104,7 @@ th{
 
 
   <div class="col-md-2 mb-3">
-            <label for="currency2" class="form-label">Wholesale Margin:</label>
+            <label for="currency2" class="form-label">Wholesale Margin %:</label>
             <select class="form-select" id="wh_margin" oninput="calcProfit()">
                   <?php for ($num = 0; $num < 101; $num++) : ?>
 
@@ -118,8 +124,15 @@ th{
        <!--  <label for="cellValue">Selected Cell Value:</label>
         <input type="text" id="cellValue" class="form-control_" readonly>
  -->
+          <label for="cellValue" style="margin-left: 34px;">Total cost price <span class="cur_1 text">NGN</span>:</label>
+          <input type="text" id="tcp" class="form-control_" readonly>
+
+          <label for="cellValue" style="margin-left: 34px;">Total selling price <span class="cur_1 text">NGN</span>:</label>
+          <input type="text" id="tsp" class="form-control_" readonly>
+
           <label for="cellValue" style="margin-left: 34px;">Profit in %:</label>
           <input type="text" id="profit" class="form-control_" readonly>
+
     </div>
 
 
@@ -131,11 +144,14 @@ th{
                 <th class="cell">Product title</th>
                 <th class="cell">Description</th>
                 <th class="cell">Quantity</th>
-                <th class="cell"><span class="cur_1 text">NGN</span> Purchase Price</th>
-                <th class="cell"><span class="cur_1 text">NGN</span> Feight cost</th>
-                <th class="cell"><span class="cur_2 text">USD</span> Feight cost</th>
-                <th class="cell"><span class="cur_1 text">NGN</span> Selling Price</th>
-                <th class="cell"><span class="cur_1 text">NGN</span> Total S.P</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Cost Price</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Unit Cost Price</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Freight cost</th>
+                <th class="cell"><span class="cur_2 text">USD</span> Freight cost</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Total Cost Price</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Total Selling Price</th>
+                <th class="cell"><span class="cur_1 text">NGN</span> Unit Selling Price</th>
+                
             </tr>
             </thead>
             <tbody>
@@ -143,12 +159,12 @@ th{
             <!-- Add more rows as needed -->
             <?php for ($row = 1; $row <= 50; $row++) : ?>
                 <tr>
-                 <?php for ($col = 1; $col <= 9; $col++) : ?>
+                 <?php for ($col = 1; $col <= 11; $col++) : ?>
 
                     <td class="cell" id="<?= $row ?>_<?= chr(96 + $col) ?>">
 
                         <div class="input-group input-group-sm">
-                            <input id="<?= $row ?>_<?= $col ?>" type="text" class="form-control border-0" placeholder_="Cell <?= $row ?><?= chr(96 + $col) ?>" oninput="updatePrice(<?= $row ?>, <?= $col ?>)" <?= ($col > 7) ? 'readonly' : '' ?>>
+                            <input id="<?= $row ?>_<?= $col ?>" type="text" class="form-control border-0" placeholder_="Cell <?= $row ?><?= chr(96 + $col) ?>" oninput="updatePrice(<?= $row ?>, <?= $col ?>)" <?= ($col == 6 || $col > 8) ? 'readonly' : '' ?>>
                         </div>
 
                     </td>
@@ -189,24 +205,39 @@ th{
     function updatePrice(row, id) {
 
         var purchase_price = parseFloat($('#'+row+'_5').val());
-        var freight_price_1 = parseFloat($('#'+row+'_6').val());
-        var freight_price_2 = parseFloat($('#'+row+'_7').val());
+        var freight_price_1 = parseFloat($('#'+row+'_7').val());
+        var freight_price_2 = parseFloat($('#'+row+'_8').val());
 
         var quantity= parseFloat($('#'+row+'_4').val());
 
         const wholesale_margin = parseInt( $('#wh_margin').val());
 
-        if(purchase_price > 0 && freight_price_1 > 0 && freight_price_2 > 0 && quantity > 0){
+        var rate = parseInt( $('#rate').val());
 
-            var selling_price = Math.ceil((purchase_price+freight_price_1+freight_price_2));
-            selling_price = Math.ceil ( ((100 + wholesale_margin) /100) * selling_price);
-            var selling_price_unit = Math.ceil( selling_price / quantity);
+        rate = rate > 0 ? rate : 1;
 
-            $('#'+row+'_8').val(selling_price_unit);
-            $('#'+row+'_9').val(selling_price);
+        if( purchase_price > 0 && quantity > 0 ){
+
+            var unit_cost_price = Math.ceil((purchase_price/quantity)) //toFixed(2);
+   
+            $('#'+row+'_6').val(unit_cost_price);
+
+        }
+
+        if( purchase_price > 0 && freight_price_1 > 0 && freight_price_2 > 0 && quantity > 0 ){
+
+            var total_cost_price = Math.ceil(( purchase_price + freight_price_1 + ( freight_price_2 * rate ) ));
+            var total_selling_price = Math.ceil ( ((100 + wholesale_margin) /100) * total_cost_price);
+            var selling_price_unit = Math.ceil( total_selling_price  / quantity);
+
+            $('#'+row+'_9').val(total_cost_price);
+            $('#'+row+'_10').val(total_selling_price);
+            $('#'+row+'_11').val(selling_price_unit);
 
             calcProfit()
         }
+
+
 
     }
 
@@ -218,13 +249,9 @@ th{
 
         for (var row = 1; row <= 50; row++) {
 
-            var costPrice = parseFloat(document.getElementById(row + '_5').value) || 0;
-            var costPrice2 = parseFloat(document.getElementById(row + '_6').value) || 0;
-            var costPrice3 = parseFloat(document.getElementById(row + '_7').value) || 0;
-
-            costPrice = costPrice + costPrice2 + costPrice3;
-
-            var sellingPrice = parseFloat(document.getElementById(row + '_9').value) || 0;
+            var costPrice = parseFloat(document.getElementById(row + '_9').value) || 0;
+  
+            var sellingPrice = parseFloat(document.getElementById(row + '_10').value) || 0;
 
             totalCostPrice += costPrice;
             totalSellingPrice += sellingPrice;
@@ -238,6 +265,8 @@ th{
         }
 
         $('#profit').val(percentageDifference.toFixed(2) + "%");
+        $('#tcp').val(totalCostPrice.toFixed(2));
+        $('#tsp').val(totalSellingPrice.toFixed(2));
 
         console.log("Total Cost Price: " + totalCostPrice);
         console.log("Total Selling Price: " + totalSellingPrice);
